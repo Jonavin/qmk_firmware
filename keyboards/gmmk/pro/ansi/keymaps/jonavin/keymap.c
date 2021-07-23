@@ -18,6 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 #include "rgb_matrix_map.h"
 
+#define ARRAYSIZE(arr)  sizeof(arr)/sizeof(arr[0])
+
 enum custom_layers {
     _BASE,
     _FN1,
@@ -263,7 +265,7 @@ void matrix_scan_user(void) {
             }
             break;
         case _MO2:
-            for (uint8_t i=0; i<sizeof(LED_LIST_NUMPAD)/sizeof(LED_LIST_NUMPAD[0]); i++) {
+            for (uint8_t i=0; i<ARRAYSIZE(LED_LIST_NUMPAD); i++) {
                 rgb_matrix_set_color(LED_LIST_NUMPAD[i], RGB_MAGENTA);
             }
             rgb_matrix_set_color(LED_R4, RGB_MAGENTA);
