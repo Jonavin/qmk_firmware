@@ -29,9 +29,10 @@ enum custom_layers {
 
 enum custom_keycodes {
   KC_00 = SAFE_RANGE,
-  KC_WINLCK,    //Toggles Win key on and off
-  RGB_TOI,   // Timeout idle time up
-  RGB_TOD,   // Timeout idle time down
+  KC_WINLCK,   //Toggles Win key on and off
+  RGB_TOI,     // Timeout idle time up
+  RGB_TOD,     // Timeout idle time down
+  RGB_TOGGLE,  // handles RGB_TOG better
 };
 
 // Tap Dance Definitions
@@ -70,7 +71,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [_FN1] = LAYOUT(
         _______, KC_MYCM, KC_WHOM, KC_CALC, KC_MSEL, KC_MPRV, KC_MNXT, KC_MPLY, KC_MSTP, KC_MUTE, KC_VOLD, KC_VOLU, _______, KC_CALC,          _______,
-        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          RGB_TOG,
+        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,          RGB_TOGGLE,
         _______, _______, RGB_VAI, _______, _______, _______, _______, KC_PSCR, KC_SLCK, KC_PAUS, _______, _______, _______, RESET,            KC_HOME,
         KC_CAPS, _______, RGB_VAD, _______, _______, _______, _______, _______, _______, _______, _______, _______,          _______,          KC_END,
         _______,          _______, RGB_HUI, _______, _______, _______, KC_NLCK, _______, RGB_TOD, RGB_TOI, _______,          _______, RGB_MOD, _______,
@@ -104,6 +105,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 static uint16_t timeout_timer = 0;
 static uint16_t timeout_counter = 0;  //in minute intervals
 static uint16_t timeout_threshold = TIMEOUT_THRESHOLD_DEFAULT;
+static bool isRGBon = true;
 
 void timeout_reset_timer(void) {
     timeout_timer = timer_read();
@@ -146,10 +148,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
              timeout_update_threshold(false);  //decrease timeout
         } else  unregister_code16(keycode);
         break;
+    case RGB_TOGGLE:
+        if(record->event.pressed) {
+            isRGBon = !isRGBon;
+            isRGBon ? rgb_matrix_enable() : rgb_matrix_disable();
+        } else  unregister_code16(keycode);
+        break;
     default:
         if (record->event.pressed) { //reset activity timer
             #ifdef RGB_MATRIX_ENABLE
-                rgb_matrix_enable();
+                if(isRGBon) rgb_matrix_enable();
             #endif
             timeout_reset_timer();
         }
@@ -230,55 +238,57 @@ void matrix_scan_user(void) {
 #ifdef RGB_MATRIX_ENABLE
     // Capslock, Scroll lock and Numlock  indicator on Left side lights.
     void rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-        if (IS_HOST_LED_ON(USB_LED_SCROLL_LOCK)) {
-            rgb_matrix_set_color(LED_L1, RGB_GREEN);
-            rgb_matrix_set_color(LED_L2, RGB_GREEN);
-        }
-        if (!IS_HOST_LED_ON(USB_LED_NUM_LOCK)) {   // on if NUM lock is OFF
-            rgb_matrix_set_color(LED_L3, RGB_MAGENTA);
-            rgb_matrix_set_color(LED_L4, RGB_MAGENTA);
-        }
-        if (IS_HOST_LED_ON(USB_LED_CAPS_LOCK)) {
-            rgb_matrix_set_color(LED_L5, RGB_RED);
-            rgb_matrix_set_color(LED_L6, RGB_RED);
-            rgb_matrix_set_color(LED_L7, RGB_RED);
-        }
-        if (_isWinKeyDisabled) {
-            rgb_matrix_set_color(LED_LWIN, RGB_RED);  //light up Win key when disabled
-        }
-        switch(get_highest_layer(layer_state)){  // special handling per layer
-        case _FN1:  // on Fn layer select what the encoder does when pressed
-            rgb_matrix_set_color(LED_R2, RGB_RED);
-            rgb_matrix_set_color(LED_R3, RGB_RED);
-            rgb_matrix_set_color(LED_R4, RGB_RED);
-            rgb_matrix_set_color(LED_FN, RGB_RED); //FN key
+        if (isRGBon) {
+            if (IS_HOST_LED_ON(USB_LED_SCROLL_LOCK)) {
+                rgb_matrix_set_color(LED_L1, RGB_GREEN);
+                rgb_matrix_set_color(LED_L2, RGB_GREEN);
+            }
+            if (!IS_HOST_LED_ON(USB_LED_NUM_LOCK)) {   // on if NUM lock is OFF
+                rgb_matrix_set_color(LED_L3, RGB_MAGENTA);
+                rgb_matrix_set_color(LED_L4, RGB_MAGENTA);
+            }
+            if (IS_HOST_LED_ON(USB_LED_CAPS_LOCK)) {
+                rgb_matrix_set_color(LED_L5, RGB_RED);
+                rgb_matrix_set_color(LED_L6, RGB_RED);
+                rgb_matrix_set_color(LED_L7, RGB_RED);
+            }
+            if (_isWinKeyDisabled) {
+                rgb_matrix_set_color(LED_LWIN, RGB_RED);  //light up Win key when disabled
+            }
+            switch(get_highest_layer(layer_state)){  // special handling per layer
+            case _FN1:  // on Fn layer select what the encoder does when pressed
+                rgb_matrix_set_color(LED_R2, RGB_RED);
+                rgb_matrix_set_color(LED_R3, RGB_RED);
+                rgb_matrix_set_color(LED_R4, RGB_RED);
+                rgb_matrix_set_color(LED_FN, RGB_RED); //FN key
 
-            // Add RGB Timeout Indicator -- shows 0 to 139 using F row and num row;  larger numbers using 16bit code
-            if (timeout_threshold <= 10) rgb_matrix_set_color(LED_LIST_FUNCROW[timeout_threshold], RGB_RED);
-            else if (timeout_threshold < 140) {
-                rgb_matrix_set_color(LED_LIST_FUNCROW[(timeout_threshold / 10)], RGB_RED);
-                rgb_matrix_set_color(LED_LIST_NUMROW[(timeout_threshold % 10)], RGB_RED);
-            } else { // >= 140 minutes, just show these 3 lights
-                rgb_matrix_set_color(LED_LIST_NUMROW[10], RGB_RED);
-                rgb_matrix_set_color(LED_LIST_NUMROW[11], RGB_RED);
-                rgb_matrix_set_color(LED_LIST_NUMROW[12], RGB_RED);
+                // Add RGB Timeout Indicator -- shows 0 to 139 using F row and num row;  larger numbers using 16bit code
+                if (timeout_threshold <= 10) rgb_matrix_set_color(LED_LIST_FUNCROW[timeout_threshold], RGB_RED);
+                else if (timeout_threshold < 140) {
+                    rgb_matrix_set_color(LED_LIST_FUNCROW[(timeout_threshold / 10)], RGB_RED);
+                    rgb_matrix_set_color(LED_LIST_NUMROW[(timeout_threshold % 10)], RGB_RED);
+                } else { // >= 140 minutes, just show these 3 lights
+                    rgb_matrix_set_color(LED_LIST_NUMROW[10], RGB_RED);
+                    rgb_matrix_set_color(LED_LIST_NUMROW[11], RGB_RED);
+                    rgb_matrix_set_color(LED_LIST_NUMROW[12], RGB_RED);
+                }
+                break;
+            case _MO2:
+                for (uint8_t i=0; i<ARRAYSIZE(LED_LIST_NUMPAD); i++) {
+                    rgb_matrix_set_color(LED_LIST_NUMPAD[i], RGB_MAGENTA);
+                }
+                rgb_matrix_set_color(LED_R4, RGB_MAGENTA);
+                rgb_matrix_set_color(LED_R5, RGB_MAGENTA);
+                rgb_matrix_set_color(LED_R6, RGB_MAGENTA);
+                break;
+            case _MO3:
+                rgb_matrix_set_color(LED_R6, RGB_GREEN);
+                rgb_matrix_set_color(LED_R7, RGB_GREEN);
+                rgb_matrix_set_color(LED_R8, RGB_GREEN);
+                break;
+            default:
+                break;
             }
-            break;
-        case _MO2:
-            for (uint8_t i=0; i<ARRAYSIZE(LED_LIST_NUMPAD); i++) {
-                rgb_matrix_set_color(LED_LIST_NUMPAD[i], RGB_MAGENTA);
-            }
-            rgb_matrix_set_color(LED_R4, RGB_MAGENTA);
-            rgb_matrix_set_color(LED_R5, RGB_MAGENTA);
-            rgb_matrix_set_color(LED_R6, RGB_MAGENTA);
-            break;
-        case _MO3:
-            rgb_matrix_set_color(LED_R6, RGB_GREEN);
-            rgb_matrix_set_color(LED_R7, RGB_GREEN);
-            rgb_matrix_set_color(LED_R8, RGB_GREEN);
-            break;
-        default:
-            break;
         }
     }
 
