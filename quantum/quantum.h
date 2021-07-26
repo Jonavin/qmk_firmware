@@ -15,16 +15,7 @@
  */
 #pragma once
 
-#if defined(__AVR__)
-#    include <avr/pgmspace.h>
-#    include <avr/io.h>
-#    include <avr/interrupt.h>
-#endif
-#if defined(PROTOCOL_CHIBIOS)
-#    include <hal.h>
-#    include "chibios_config.h"
-#endif
-
+#include "platform.h"
 #include "wait.h"
 #include "matrix.h"
 #include "keymap.h"
@@ -170,6 +161,7 @@ extern layer_state_t layer_state;
 
 #ifdef HAPTIC_ENABLE
 #    include "haptic.h"
+#    include "process_haptic.h"
 #endif
 
 #ifdef OLED_DRIVER_ENABLE
