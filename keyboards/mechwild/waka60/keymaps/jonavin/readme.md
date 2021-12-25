@@ -41,3 +41,5 @@ ALTTAB_SCROLL_ENABLE
     - bind KS_TSTOG to a different key to change how this toggle happens 
    
 ## All layers diagram
+![image](https://user-images.githubusercontent.com/71780717/147392249-791a41f0-43af-4e16-bbf6-12771d724043.png)
+
