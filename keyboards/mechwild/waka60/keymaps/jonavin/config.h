@@ -1,5 +1,6 @@
 /*
 Copyright 2021 Kyle McCreery
+Copyright 2022 Jonavin Eng
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -32,3 +33,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     //Always send Escape if Control is pressed
 
 #define TAPPING_TERM 180
+
+#ifdef RGBLIGHT_ENABLE
+    // Redefine number of LED
+#   ifdef RGBLED_NUM
+        #undef RGBLED_NUM
+#   endif // RGBLED_NUM
+#   define RGBLED_NUM 20
+
+#   define RGBLIGHT_LAYERS
+#   define RGBLIGHT_SLEEP
+#endif // RGBLIGHT_ENABLE
