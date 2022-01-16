@@ -115,10 +115,12 @@ KEYMAP LEVEL ADDITIONAL PROCESSING FUNCTIONS
 
 LIST OF COMPATIBLE KEYMAPS
 - gmmk/pro/ansi
+- gmmk/pro/iso
 - keebio/quefrency/rev3
 - mechwild/mercutio
 - mechwild/murphpad
 - mechwild/OBE
+- mechwild/waka60
 - kbdfans/kdb67
 - nopunin10did/kastenwagen48
 
